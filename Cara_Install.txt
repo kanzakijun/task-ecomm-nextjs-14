@@ -1,0 +1,19 @@
+Sebelum menjalankan, pastikan sudah terinstall NodeJS minimal versi 18
+
+Langkah=
+1. extract file zip nya
+2. masuk ke dalam folder nya, lalu buka terminal, arahkan ke directory project nya,
+3. ketik di terminal => npm install --legacy-peer-deps
+tunggu sampai selesai.
+4. ketik di terminal lagi => npm install -g yarn
+tunggu sampai selesai.
+5. jalankan project dengan ketik => npm run dev
+tunggu sampai ada tulisan webpack compiled successfully
+6. buka web browser (Firefox/GoogleChrome) localhost:3000
+
+
+admin@gmail.com
+password123
+
+user@example.com
+password123
