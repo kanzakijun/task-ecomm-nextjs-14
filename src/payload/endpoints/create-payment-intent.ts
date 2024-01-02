@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import type { PayloadHandler } from 'payload/config'
 import Stripe from 'stripe'
 
@@ -60,33 +61,35 @@ export const createPaymentIntent: PayloadHandler = async (req, res): Promise<voi
 
     // for each item in cart, lookup the product in Stripe and add its price to the total
     await Promise.all(
-      fullUser?.cart?.items?.map(async (item: CartItems[0]): Promise<null> => {
-        const { product, quantity } = item
+      fullUser?.cart?.items?.map(
+        async (item: CartItems[0]): Promise<null> => {
+          const { product, quantity } = item
 
-        if (!quantity) {
+          if (!quantity) {
+            return null
+          }
+
+          if (typeof product === 'string' || !product?.stripeProductID) {
+            throw new Error('No Stripe Product ID')
+          }
+
+          const prices = await stripe.prices.list({
+            product: product.stripeProductID,
+            limit: 100,
+            expand: ['data.product'],
+          })
+
+          if (prices.data.length === 0) {
+            res.status(404).json({ error: 'There are no items in your cart to checkout with' })
+            return null
+          }
+
+          const price = prices.data[0]
+          total += price.unit_amount * quantity
+
           return null
-        }
-
-        if (typeof product === 'string' || !product?.stripeProductID) {
-          throw new Error('No Stripe Product ID')
-        }
-
-        const prices = await stripe.prices.list({
-          product: product.stripeProductID,
-          limit: 100,
-          expand: ['data.product'],
-        })
-
-        if (prices.data.length === 0) {
-          res.status(404).json({ error: 'There are no items in your cart to checkout with' })
-          return null
-        }
-
-        const price = prices.data[0]
-        total += price.unit_amount * quantity
-
-        return null
-      }),
+        },
+      ),
     )
 
     if (total === 0) {
@@ -96,12 +99,13 @@ export const createPaymentIntent: PayloadHandler = async (req, res): Promise<voi
     const paymentIntent = await stripe.paymentIntents.create({
       customer: stripeCustomerID,
       amount: total,
-      currency: 'usd',
+      currency: 'IDR',
       payment_method_types: ['card'],
     })
 
     res.send({ client_secret: paymentIntent.client_secret })
-  } catch (error: unknown) {
+    // eslint-disable-next-line @typescript-eslint/no-implicit-any-catch
+  } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     payload.logger.error(message)
     res.json({ error: message })
